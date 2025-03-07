@@ -1,9 +1,11 @@
 import streamlit as st
 from PyPDF2 import PdfReader
-from transformers import pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.tokenize import sent_tokenize
+import nltk
 
-# Load summarization pipeline
-summarizer = pipeline("summarization")
+# Download NLTK data
+nltk.download('punkt')
 
 # Streamlit app
 st.title("Easy Learning - Upload Your Notes")
@@ -22,7 +24,24 @@ if uploaded_file is not None:
     st.write("Extracted Text:")
     st.write(text)
 
-    # Generate summary
+    # Generate summary using TF-IDF
     st.write("Summary:")
-    summary = summarizer(text, max_length=130, min_length=30, do_sample=False)
-    st.write(summary[0]['summary_text'])
+    try:
+        # Tokenize sentences
+        sentences = sent_tokenize(text)
+        
+        # Check if there are enough sentences to summarize
+        if len(sentences) < 3:
+            st.warning("The text is too short to generate a meaningful summary.")
+        else:
+            # Use TF-IDF to score sentences
+            vectorizer = TfidfVectorizer(stop_words='english')
+            tfidf_matrix = vectorizer.fit_transform(sentences)
+            sentence_scores = tfidf_matrix.sum(axis=1)
+            
+            # Get top 3 sentences with the highest scores
+            top_sentences = [sentences[i] for i in sentence_scores.argsort(axis=0)[-3:]]
+            summary = " ".join(top_sentences)
+            st.write(summary)
+    except Exception as e:
+        st.error(f"Error generating summary: {e}")
