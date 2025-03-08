@@ -1,72 +1,84 @@
 import streamlit as st
 from PyPDF2 import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 import nltk
 import string
-import spacy
-from transformers import pipeline
+from collections import Counter
 
 # Download NLTK data
 nltk.download('punkt')
 nltk.download('stopwords')
 
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
-
-# Load Hugging Face summarization pipeline
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-
 # Streamlit app
-st.title("Easy Learning - Upload Your Notes")
+st.title("Easy Learning - Analyze Notes and Exam Papers")
 
-# File uploader
-uploaded_file = st.file_uploader("Upload your notes (PDF)", type="pdf")
+# File uploaders
+st.sidebar.header("Upload Files")
+notes_file = st.sidebar.file_uploader("Upload your notes (PDF)", type="pdf")
+exam_file = st.sidebar.file_uploader("Upload exam papers (PDF)", type="pdf")
 
-if uploaded_file is not None:
-    # Extract text from PDF
-    pdf_reader = PdfReader(uploaded_file)
+# Function to extract text from PDF
+def extract_text_from_pdf(file):
+    pdf_reader = PdfReader(file)
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text()
-    
-    # Display the extracted text
-    st.write("Extracted Text:")
-    st.write(text)
+    return text
 
-    # Step 1: Preprocess the text
-    def preprocess_text(text):
-        # Remove punctuation
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        # Tokenize and remove stopwords
-        tokens = word_tokenize(text)
-        stop_words = set(stopwords.words('english'))
-        filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
-        return " ".join(filtered_tokens)
+# Function to preprocess text
+def preprocess_text(text):
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize and remove stopwords
+    tokens = word_tokenize(text)
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
+    return " ".join(filtered_tokens)
 
-    cleaned_text = preprocess_text(text)
-    st.write("Cleaned Text:")
-    st.write(cleaned_text)
+# Function to analyze exam papers
+def analyze_exam_papers(text):
+    # Tokenize sentences
+    sentences = sent_tokenize(text)
+    # Tokenize words
+    words = word_tokenize(text)
+    # Count word frequencies
+    word_freq = Counter(words)
+    # Get the 10 most common words
+    most_common = word_freq.most_common(10)
+    return most_common
 
-    # Step 2: Identify key topics using TF-IDF
-    st.write("Key Topics:")
-    try:
-        vectorizer = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = vectorizer.fit_transform([cleaned_text])
-        feature_names = vectorizer.get_feature_names_out()
-        tfidf_scores = tfidf_matrix.toarray()[0]
+# Function to highlight important areas in notes
+def highlight_important_areas(notes_text, important_terms):
+    highlighted_text = notes_text
+    for term, _ in important_terms:
+        highlighted_text = highlighted_text.replace(term, f"**{term}**")
+    return highlighted_text
 
-        # Get top 10 important terms
-        top_terms = [feature_names[i] for i in tfidf_scores.argsort()[-30:]]
-        st.write(top_terms)
-    except Exception as e:
-        st.error(f"Error extracting key topics: {e}")
+# Main logic
+if notes_file is not None and exam_file is not None:
+    # Extract text from files
+    notes_text = extract_text_from_pdf(notes_file)
+    exam_text = extract_text_from_pdf(exam_file)
 
-    # Step 3: Summarize the content using Hugging Face
-    st.write("Advanced Summary:")
-    try:
-        summary = summarizer(text, max_length=1130, min_length=300, do_sample=False)
-        st.write(summary[0]['summary_text'])
-    except Exception as e:
-        st.error(f"Error generating summary: {e}")
+    # Preprocess text
+    cleaned_notes = preprocess_text(notes_text)
+    cleaned_exam = preprocess_text(exam_text)
+
+    # Analyze exam papers
+    important_terms = analyze_exam_papers(cleaned_exam)
+    st.write("Frequently Tested Topics:")
+    st.write(important_terms)
+
+    # Highlight important areas in notes
+    highlighted_notes = highlight_important_areas(notes_text, important_terms)
+    st.write("Highlighted Notes:")
+    st.markdown(highlighted_notes)
+
+elif notes_file is not None:
+    st.warning("Please upload exam papers to analyze frequently tested topics.")
+elif exam_file is not None:
+    st.warning("Please upload notes to highlight important areas.")
+else:
+    st.info("Upload your notes and exam papers to get started.")
