@@ -1,0 +1,14 @@
+from moviepy.audio.io.AudioFileClip import AudioFileClip
+from moviepy.editor import CompositeAudioClip
+
+def add_background_music(video_filename, music_filename, output_filename="final_with_music.mp4"):
+    video = VideoFileClip(video_filename)
+    narration_audio = video.audio
+    music = AudioFileClip(music_filename).set_duration(video.duration).volumex(0.2)
+    
+    final_audio = CompositeAudioClip([narration_audio, music])
+    video = video.set_audio(final_audio)
+    video.write_videofile(output_filename, fps=24)
+
+# Example usage:
+add_background_music("final_video.mp4", "background_music.mp3")

@@ -1,0 +1,17 @@
+from PIL import Image, ImageDraw, ImageFont
+
+def create_topic_image(topic, index):
+    img = Image.new('RGB', (1280, 720), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    
+    font = ImageFont.load_default()  # Default font (can be changed)
+    draw.text((100, 300), topic, fill="black", font=font)
+    
+    filename = f"topic_{index}.png"
+    img.save(filename)
+    return filename
+
+# Example usage:
+topics = ["Database Indexing", "Normalization", "SQL Joins"]
+for i, topic in enumerate(topics):
+    create_topic_image(topic, i)

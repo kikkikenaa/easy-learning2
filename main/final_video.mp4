@@ -1,0 +1,18 @@
+from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+
+def create_video(image_files, audio_files, output_filename="final_video.mp4"):
+    clips = []
+    
+    for img, audio in zip(image_files, audio_files):
+        audio_clip = AudioFileClip(audio)
+        image_clip = ImageClip(img, duration=audio_clip.duration)
+        image_clip = image_clip.set_audio(audio_clip)
+        clips.append(image_clip)
+    
+    final_video = concatenate_videoclips(clips, method="compose")
+    final_video.write_videofile(output_filename, fps=24)
+    
+# Example usage:
+image_files = ["topic_0.png", "topic_1.png", "topic_2.png"]
+audio_files = ["audio_0.mp3", "audio_1.mp3", "audio_2.mp3"]
+create_video(image_files, audio_files)

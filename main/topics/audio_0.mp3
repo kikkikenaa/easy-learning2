@@ -1,0 +1,17 @@
+from gtts import gTTS
+import os
+
+def generate_audio(text, index):
+    tts = gTTS(text=text, lang='en')
+    filename = f"audio_{index}.mp3"
+    tts.save(filename)
+    return filename
+
+# Example usage:
+summaries = [
+    "Database indexing speeds up search queries.",
+    "Normalization removes redundant data.",
+    "SQL Joins combine data from multiple tables."
+]
+for i, summary in enumerate(summaries):
+    generate_audio(summary, i)
