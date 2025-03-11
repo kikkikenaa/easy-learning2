@@ -1,3 +1,9 @@
 moviepy
 manim
 gtts
+streamlit
+pandas
+numpy
+matplotlib
+scikit-learn
+requests
